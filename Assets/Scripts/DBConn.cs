@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.Networking;
 using System.Collections;
+using Unity.VisualScripting;
 
 // UnityWebRequest.Get example
 
@@ -10,6 +11,8 @@ using System.Collections;
 public class DBConn : MonoBehaviour
 
 {
+    private string pingUrl = "http://localhost/hearthub/ping.php"; // PHP API endpoint which unity ping for every 30seconds
+    public int machineId = 1; //This must be unique identifier
 
     // Example data to post (no need for id)
     public string timestamp = "2024-09-25 12:34:56";
@@ -23,8 +26,13 @@ public class DBConn : MonoBehaviour
     {
         // A correct website page.
         StartCoroutine(PostRequest());
+        InvokeRepeating("SendPing", 0f, 10f); // to ping database for every 30sec
 
-    
+    }
+
+    void SendPing()
+    {
+        StartCoroutine(PingServer());
     }
 
     IEnumerator PostRequest()
@@ -62,6 +70,30 @@ public class DBConn : MonoBehaviour
             }
 
 
-        
+
+    }
+
+
+
+    IEnumerator PingServer()
+    {
+
+        WWWForm form = new WWWForm();
+        form.AddField("machine_id", machineId);
+        form.AddField("timestamp", System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+
+        using (UnityWebRequest www = UnityWebRequest.Post(pingUrl, form))
+        {
+            yield return www.SendWebRequest();
+
+            if (www.result != UnityWebRequest.Result.Success)
+            {
+                Debug.Log(www.error);
+            }
+            else
+            {
+                Debug.Log("ping status sent successfully");
+            }
+        }
     }
 }
