@@ -1,20 +1,21 @@
 <?php
- $servername="localhost";
- $username="root";
- $password="";
- $dbName="hearthub";
 
- //make database connection
+$config = include('C:\xampp\htdocs\hearthub\config.php');
 
- $conn = new mysqli($servername, $username, $password, $dbName);
-  //check connection_aborted
+ $servername=$config['servername'];
+ $username =$config['username'];
+ $password =$config['password'];
+ $dbname =$config['database'];
+
+ $conn = new mysqli($servername, $username, $password, $dbname);
+
 
   if(!$conn){
 
-      die("connection failed ". mysqli_connect_error());
+      die("Connection failed: " . $conn->connect_error);
   }
 
-  else echo ("connection success")
+  echo "Connected successfully to Database";
 
-
+  
 ?>
