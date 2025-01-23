@@ -12,11 +12,11 @@ using System.IO;
 public class DBConn : MonoBehaviour
 
 {
-    private string pingUrl = "http://localhost/hearthub/ping.php"; // PHP API endpoint which unity ping for every 30seconds
-    public int machineId = 1; //This must be unique identifier
+    private string pingUrl = "https://hearthub-post-a0dvbcheceafb5cj.uksouth-01.azurewebsites.net/php_scripts/ping.php"; // PHP API endpoint which unity ping for every 30seconds
+    public int machineId; //This must be unique identifier
 
     // Example data to post (no need for id)
-    //public string timestamp = "2024-09-25 12:34:56";
+    public string updated_at = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
     public int time_engaged;
     public int distance_while_active;
     public int hand_position;
@@ -28,10 +28,10 @@ public class DBConn : MonoBehaviour
     public string question_1_response;
     public string question_2_response;
     public string session_status;
+    //public string updated_at;
 
 
-
-    private string phpUrl = "http://localhost/hearthub/first_ping.php"; // Replace with your PHP script URL
+    private string phpUrl = "https://hearthub-post-a0dvbcheceafb5cj.uksouth-01.azurewebsites.net/php_scripts/first_ping.php"; // Replace with your PHP script URL
 
     public string machineName;
     public string location;
@@ -40,10 +40,10 @@ public class DBConn : MonoBehaviour
     void Start()
     {
         // A correct website page.
-        //StartCoroutine(PostRequest());
-        //InvokeRepeating("SendPing", 0f, 10f); // to ping database for every 30sec
+        StartCoroutine(PostRequest());
+        InvokeRepeating("SendPing", 0f, 10f); // to ping database for every 30sec
 
-        StartCoroutine(SendMachineData(machineName, location));
+        //StartCoroutine(SendMachineData(machineName, location));
 
     }
 
@@ -57,7 +57,7 @@ public class DBConn : MonoBehaviour
       
 
             // URL of your PHP script
-            string url = "http://localhost/hearthub/post_request.php";
+            string url = "https://hearthub-post-a0dvbcheceafb5cj.uksouth-01.azurewebsites.net/php_scripts/post_request.php";
 
             // form to send data
             WWWForm form = new WWWForm();
@@ -75,8 +75,7 @@ public class DBConn : MonoBehaviour
         form.AddField("question_1_response", question_1_response);
         form.AddField("question_2_response", question_2_response);
         form.AddField("session_status", session_status);
-        
-       
+        form.AddField("updated_at", updated_at);
 
 
         // Create a UnityWebRequest for POST
@@ -94,7 +93,8 @@ public class DBConn : MonoBehaviour
                 // Read and display the response from the PHP file
       
                 Debug.Log("Response from PHP: " + webRequest.downloadHandler.text);
-                Debug.Log("Php response error");
+                
+           
         }
 
 
