@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.Networking;
 using System.Collections;
 using Unity.VisualScripting;
+using System.IO;
 
 // UnityWebRequest.Get example
 
@@ -27,13 +28,22 @@ public class DBConn : MonoBehaviour
     public string question_1_response;
     public string question_2_response;
     public string session_status;
- 
+
+
+
+    private string phpUrl = "http://localhost/hearthub/first_ping.php"; // Replace with your PHP script URL
+
+    public string machineName;
+    public string location;
+
 
     void Start()
     {
         // A correct website page.
-        StartCoroutine(PostRequest());
-        InvokeRepeating("SendPing", 0f, 10f); // to ping database for every 30sec
+        //StartCoroutine(PostRequest());
+        //InvokeRepeating("SendPing", 0f, 10f); // to ping database for every 30sec
+
+        StartCoroutine(SendMachineData(machineName, location));
 
     }
 
@@ -115,4 +125,48 @@ public class DBConn : MonoBehaviour
             }
         }
     }
+
+
+
+    IEnumerator SendMachineData(string machineName, string location)
+    {
+        // Prepare form data
+        WWWForm form = new WWWForm();
+        form.AddField("machine_name", machineName);
+        form.AddField("location", location);
+
+        using (UnityWebRequest request = UnityWebRequest.Post(phpUrl, form))
+        {
+            // Send the request and wait for the response
+            yield return request.SendWebRequest();
+
+            if (request.result == UnityWebRequest.Result.ConnectionError || request.result == UnityWebRequest.Result.ProtocolError)
+            {
+                Debug.LogError($"Error sending data: {request.error}");
+            }
+            else
+            {
+                // Get the response as plain text
+                string response = request.downloadHandler.text;
+
+                if (response.StartsWith("Error") || response.Contains("Machine name already exists"))
+                {
+                    Debug.LogError($"Server error: {response}");
+                }
+                else
+                {
+                    // Save the machine ID to a file
+                    string filePath = @"C:/machine_id.txt";
+                   
+                    File.WriteAllText(filePath, $"{response}");
+
+                    Debug.Log($"Machine ID saved to {filePath}");
+
+                }
+            }
+        }
+    }
+
+
+
 }
