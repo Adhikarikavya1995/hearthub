@@ -37,13 +37,20 @@ public class DBConn : MonoBehaviour
     public string location;
 
 
+    // to send data to php script to generate qr code and to encode the data
+    public string phpURL = "http://localhost/hearthub/qr_code.php"; // Replace with your server's PHP URL
+
+   
+
     void Start()
     {
         // A correct website page.
-        StartCoroutine(PostRequest());
-        InvokeRepeating("SendPing", 0f, 10f); // to ping database for every 30sec
+        //StartCoroutine(PostRequest());
+        //InvokeRepeating("SendPing", 0f, 10f); // to ping database for every 30sec
 
         //StartCoroutine(SendMachineData(machineName, location));
+
+        StartCoroutine(SendMetricsToGenerateQRCode(compression, recoil, hand_position, rate, machineId));
 
     }
 
@@ -54,13 +61,13 @@ public class DBConn : MonoBehaviour
 
     IEnumerator PostRequest()
     {
-      
 
-            // URL of your PHP script
-            string url = "https://hearthub-post-a0dvbcheceafb5cj.uksouth-01.azurewebsites.net/php_scripts/post_request.php";
 
-            // form to send data
-            WWWForm form = new WWWForm();
+        // URL of your PHP script
+        string url = "https://hearthub-post-a0dvbcheceafb5cj.uksouth-01.azurewebsites.net/php_scripts/post_request.php";
+
+        // form to send data
+        WWWForm form = new WWWForm();
 
         //form.AddField("timestamp", timestamp);
         form.AddField("machine_id", machineId.ToString());
@@ -81,20 +88,20 @@ public class DBConn : MonoBehaviour
         // Create a UnityWebRequest for POST
         UnityWebRequest webRequest = UnityWebRequest.Post(url, form);
 
-            // Request and wait for the desired page.
-            yield return webRequest.SendWebRequest();
+        // Request and wait for the desired page.
+        yield return webRequest.SendWebRequest();
 
-            if (webRequest.result == UnityWebRequest.Result.ConnectionError || webRequest.result == UnityWebRequest.Result.ProtocolError)
-            {
-                Debug.LogError("Error: " + webRequest.error);
-            }
-            else
-            {
-                // Read and display the response from the PHP file
-      
-                Debug.Log("Response from PHP: " + webRequest.downloadHandler.text);
-                
-           
+        if (webRequest.result == UnityWebRequest.Result.ConnectionError || webRequest.result == UnityWebRequest.Result.ProtocolError)
+        {
+            Debug.LogError("Error: " + webRequest.error);
+        }
+        else
+        {
+            // Read and display the response from the PHP file
+
+            Debug.Log("Response from PHP: " + webRequest.downloadHandler.text);
+
+
         }
 
 
@@ -157,7 +164,7 @@ public class DBConn : MonoBehaviour
                 {
                     // Save the machine ID to a file
                     string filePath = @"C:/machine_id.txt";
-                   
+
                     File.WriteAllText(filePath, $"{response}");
 
                     Debug.Log($"Machine ID saved to {filePath}");
@@ -165,6 +172,43 @@ public class DBConn : MonoBehaviour
                 }
             }
         }
+    }
+
+
+    IEnumerator SendMetricsToGenerateQRCode(int compression, int recoil, int hand_position, int rate, int machineId)
+    {
+        WWWForm form = new WWWForm();
+        form.AddField("compression", compression.ToString());
+        form.AddField("recoil", recoil.ToString());
+        form.AddField("hand_position", hand_position.ToString());
+        form.AddField("rate", rate.ToString());
+        form.AddField("machine_id", machineId.ToString());
+
+        using (UnityWebRequest www = UnityWebRequest.Post(phpURL, form))
+        {
+            yield return www.SendWebRequest();
+
+            if (www.result == UnityWebRequest.Result.Success)
+            {
+                // Parse the response to get the encoded URL
+                string jsonResponse = www.downloadHandler.text;
+                var response = JsonUtility.FromJson<PHPResponse>(jsonResponse);
+                string encodedUrl = response.encoded_url;
+
+                // Print the encoded URL for debugging
+                Debug.Log("Encoded URL received from PHP: " + encodedUrl);
+            }
+            else
+            {
+                Debug.LogError("Failed to send metrics: " + www.error);
+            }
+        }
+    }
+
+    [System.Serializable]
+    public class PHPResponse
+    {
+        public string encoded_url;
     }
 
 
